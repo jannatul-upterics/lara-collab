@@ -70,18 +70,15 @@ const CompanyEdit = () => {
                   src={form.data.logo === null ? item.logo : URL.createObjectURL(form.data.logo)}
                   w={240}
                   h={64}
+                  fit="contain"
                 />
               ) : (
-                <Box
+                <Image
+                  src="/images/logo.png"
                   w={240}
                   h={64}
-                  bg='#25262b'
-                  align='center'
-                  pt='lg'
-                  opacity={0.6}
-                >
-                  Company logo
-                </Box>
+                  fit="contain"
+                />
               )}
             </Grid.Col>
             <Grid.Col span='auto'>

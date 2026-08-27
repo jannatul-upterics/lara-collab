@@ -80,6 +80,8 @@ class InvoiceService
         }
         if (! empty($ownerCompany->logo)) {
             $pdf->logo(public_path($ownerCompany->logo));
+        } else {
+            $pdf->logo(public_path('images/logo.png'));
         }
         if (! empty($invoice->note)) {
             $pdf->notes($invoice->note);
