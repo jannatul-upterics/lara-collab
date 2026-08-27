@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Http\Requests\TaskGroup;
+
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateTaskGroupRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'name' => [
+                'required',
+                'string',
+                Rule::unique('task_groups', 'name')
+                    ->where('project_id', $this->route('project')->id)
+                    ->ignore($this->route('taskGroup')->id),
+            ],
+            'color' => [
+                'nullable',
+                'string',
+                'max:16',
+            ],
+        ];
+    }
+}
