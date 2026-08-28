@@ -5,4 +5,3 @@ it('redirects root to dashboard', function () {
 
     $response->assertRedirect('/dashboard');
 });
-
