@@ -39,6 +39,7 @@ class PermissionSeeder extends Seeder
             'admin' => $insertPermissions('admin'),
             'manager' => $insertPermissions('manager'),
             'developer' => $insertPermissions('developer'),
+            'qa engineer' => $insertPermissions('qa engineer'),
             'designer' => $insertPermissions('designer'),
             'client' => $insertPermissions('client'),
         ];

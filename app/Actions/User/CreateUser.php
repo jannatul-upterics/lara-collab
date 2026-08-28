@@ -22,7 +22,7 @@ class CreateUser
                 'password' => Hash::make($data['password']),
             ]);
 
-            $user->update(['avatar' => UserService::storeOrFetchAvatar($user, $data['avatar'])]);
+            $user->update(['avatar' => UserService::storeOrFetchAvatar($user, $data['avatar'] ?? null)]);
 
             $user->assignRole($data['roles']);
 

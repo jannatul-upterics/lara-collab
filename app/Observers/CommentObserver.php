@@ -11,6 +11,10 @@ class CommentObserver
      */
     public function created(Comment $comment): void
     {
+        if (! auth()->check()) {
+            return;
+        }
+
         $comment->activities()->create([
             'project_id' => $comment->task->project_id,
             'user_id' => auth()->id(),

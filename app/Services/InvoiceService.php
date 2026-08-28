@@ -87,7 +87,7 @@ class InvoiceService
             $pdf->notes($invoice->note);
         }
 
-        $pdf->sequence($invoice->number)
+        $pdf->sequence((int) $invoice->number)
             ->serialNumberFormat('{SEQUENCE}')
             ->type($invoice->type)
             ->seller($owner)

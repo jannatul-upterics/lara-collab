@@ -11,6 +11,10 @@ class ProjectObserver
      */
     public function created(Project $project): void
     {
+        if (! auth()->check()) {
+            return;
+        }
+
         $project->activities()->create([
             'project_id' => $project->id,
             'user_id' => auth()->id(),
@@ -24,6 +28,10 @@ class ProjectObserver
      */
     public function updated(Project $project): void
     {
+        if (! auth()->check()) {
+            return;
+        }
+
         if ($project->isDirty(['name'])) {
             $project->activities()->create([
                 'project_id' => $project->id,
@@ -39,6 +47,10 @@ class ProjectObserver
      */
     public function archived(Project $project): void
     {
+        if (! auth()->check()) {
+            return;
+        }
+
         $project->activities()->create([
             'project_id' => $project->id,
             'user_id' => auth()->id(),
@@ -52,6 +64,10 @@ class ProjectObserver
      */
     public function unArchived(Project $project): void
     {
+        if (! auth()->check()) {
+            return;
+        }
+
         $project->activities()->create([
             'project_id' => $project->id,
             'user_id' => auth()->id(),

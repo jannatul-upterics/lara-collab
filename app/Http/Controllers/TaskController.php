@@ -78,7 +78,7 @@ class TaskController extends Controller
             'groupedTasks' => $groupedTasks,
             'openedTask' => $task ? $task->loadDefault() : null,
             'currency' => [
-                'symbol' => OwnerCompany::with('currency')->first()->currency->symbol,
+                'symbol' => OwnerCompany::with('currency')->first()?->currency?->symbol ?? '$',
             ],
         ]);
     }

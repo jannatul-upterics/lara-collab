@@ -23,6 +23,10 @@ class UpdateTask
             $data['fixed_price'] = (int) $data['fixed_price'];
         }
 
+        if ($updateField === 'priority_id' && empty($data['priority_id'])) {
+            $data['priority_id'] = null;
+        }
+
         if (! in_array($updateField, ['subscribed_users', 'labels'])) {
             $task->update($data);
 

@@ -15,8 +15,8 @@ class UpdateClient
             'email' => $data['email'],
         ];
 
-        if ($user->avatar === null || $data['avatar']) {
-            $newData['avatar'] = UserService::storeOrFetchAvatar($user, $data['avatar']);
+        if ($user->avatar === null || ! empty($data['avatar'])) {
+            $newData['avatar'] = UserService::storeOrFetchAvatar($user, $data['avatar'] ?? null);
         }
 
         if (! empty($data['password'])) {

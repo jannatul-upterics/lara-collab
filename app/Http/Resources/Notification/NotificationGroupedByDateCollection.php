@@ -19,9 +19,9 @@ class NotificationGroupedByDateCollection extends ResourceCollection
             ->map(function ($notification) {
                 return [
                     'id' => $notification->id,
-                    'title' => $notification->data['title'],
-                    'subtitle' => $notification->data['subtitle'],
-                    'link' => $notification->data['link'],
+                    'title' => $notification->data['title'] ?? '',
+                    'subtitle' => $notification->data['subtitle'] ?? '',
+                    'link' => $notification->data['link'] ?? '#',
                     'read_at' => $notification->read_at,
                     'created_at' => $notification->created_at,
                     'date' => $notification->created_at->format('F j, Y'),
