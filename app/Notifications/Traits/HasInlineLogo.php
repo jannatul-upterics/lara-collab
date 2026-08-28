@@ -17,7 +17,7 @@ trait HasInlineLogo
     {
         $ownerCompany = OwnerCompany::first();
         $logoPath = null;
-        if ($ownerCompany && !empty($ownerCompany->logo) && file_exists(public_path($ownerCompany->logo))) {
+        if ($ownerCompany && ! empty($ownerCompany->logo) && file_exists(public_path($ownerCompany->logo))) {
             $logoPath = public_path($ownerCompany->logo);
         } elseif (file_exists(public_path('images/logo.png'))) {
             $logoPath = public_path('images/logo.png');
@@ -40,4 +40,3 @@ trait HasInlineLogo
         return $mailMessage;
     }
 }
-
