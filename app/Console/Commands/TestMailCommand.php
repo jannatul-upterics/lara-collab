@@ -31,13 +31,14 @@ class TestMailCommand extends Command
 
         if (empty($recipient) || $recipient === 'your_email@gmail.com' || $recipient === 'null') {
             $this->error('Please specify a valid recipient email address: php artisan mail:test user@example.com');
+
             return Command::FAILURE;
         }
 
         $this->info("Attempting to send test email to: {$recipient}");
-        $this->info("SMTP Host: " . config('mail.mailers.smtp.host'));
-        $this->info("SMTP Port: " . config('mail.mailers.smtp.port'));
-        $this->info("From Address: " . config('mail.from.address'));
+        $this->info('SMTP Host: '.config('mail.mailers.smtp.host'));
+        $this->info('SMTP Port: '.config('mail.mailers.smtp.port'));
+        $this->info('From Address: '.config('mail.from.address'));
 
         try {
             Mail::raw('This is a test email sent from LaraCollab using Google SMTP configuration.', function ($message) use ($recipient) {
@@ -46,10 +47,11 @@ class TestMailCommand extends Command
             });
 
             $this->output->success("Test email sent successfully to {$recipient}!");
+
             return Command::SUCCESS;
         } catch (Throwable $e) {
             $this->error('Failed to send test email!');
-            $this->error('Error Message: ' . $e->getMessage());
+            $this->error('Error Message: '.$e->getMessage());
             $this->newLine();
             $this->warn('Troubleshooting Tips for Google SMTP:');
             $this->line('1. Make sure MAIL_USERNAME in .env is your full Gmail address (e.g., example@gmail.com).');
