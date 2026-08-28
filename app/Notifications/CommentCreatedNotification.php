@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\Queue;
 use App\Models\Comment;
+use App\Notifications\Traits\HasInlineLogo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
 
 class CommentCreatedNotification extends Notification implements ShouldQueue
 {
+    use HasInlineLogo;
     use Queueable;
 
     public function __construct(public Comment $comment) {}
@@ -70,11 +72,13 @@ class CommentCreatedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("[{$this->comment->task->project->name}] {$this->comment->user->name} commented on {$this->comment->task->name} task")
             ->greeting("{$this->comment->user->name} commented on {$this->comment->task->name} task")
             ->line($this->comment->content)
             ->action('Open task', route('projects.tasks.open', ['project' => $this->comment->task->project_id, 'task' => $this->comment->task->id]));
+
+        return $this->attachInlineLogo($mail);
     }
 
     /**

@@ -33,7 +33,7 @@ width: 100% !important;
 .button {
 width: 100% !important;
 }
-
+}
 @media (prefers-color-scheme: dark) {
 ::-moz-selection { /* Code for Firefox */
 color: #ffffff;
@@ -106,7 +106,7 @@ color: #c1c2c5;
 <!-- Body content -->
 <tr>
 <td class="content-cell">
-{{ Illuminate\Mail\Markdown::parse($slot) }}
+{{ Illuminate\Mail\Markdown::parse(preg_replace('/^[ \t]{4,}/m', '', $slot)) }}
 
 {{ $subcopy ?? '' }}
 </td>

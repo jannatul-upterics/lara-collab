@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\Queue;
 use App\Models\Task;
+use App\Notifications\Traits\HasInlineLogo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
 
 class TaskCreatedNotification extends Notification implements ShouldQueue
 {
+    use HasInlineLogo;
     use Queueable;
 
     public function __construct(public Task $task) {}
@@ -70,11 +72,13 @@ class TaskCreatedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("[{$this->task->project->name}] Task {$this->task->name} was created")
             ->greeting("{$this->task->createdByUser->name} created a new task")
             ->action('Open task', route('projects.tasks.open', ['project' => $this->task->project_id, 'task' => $this->task->id]))
             ->line($this->task->description);
+
+        return $this->attachInlineLogo($mail);
     }
 
     /**

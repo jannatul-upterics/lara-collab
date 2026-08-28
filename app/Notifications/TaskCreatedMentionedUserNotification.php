@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\Queue;
 use App\Models\Task;
+use App\Notifications\Traits\HasInlineLogo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
 
 class TaskCreatedMentionedUserNotification extends Notification implements ShouldQueue
 {
+    use HasInlineLogo;
     use Queueable;
 
     public function __construct(public Task $task) {}
@@ -70,11 +72,13 @@ class TaskCreatedMentionedUserNotification extends Notification implements Shoul
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("[{$this->task->project->name}] You were mentioned in a new \"{$this->task->name}\" task")
             ->greeting("{$this->task->createdByUser->name} has mentioned you in a new \"{$this->task->name}\" task")
             ->action('Open task', route('projects.tasks.open', ['project' => $this->task->project_id, 'task' => $this->task->id]))
             ->line($this->task->description);
+
+        return $this->attachInlineLogo($mail);
     }
 
     /**
