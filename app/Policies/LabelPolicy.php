@@ -46,4 +46,12 @@ class LabelPolicy
     {
         return $user->hasPermissionTo('restore label');
     }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Label $label): bool
+    {
+        return $user->isAdmin();
+    }
 }

@@ -5,12 +5,22 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Project\StoreProjectRequest;
 use App\Http\Requests\Project\UpdateProjectRequest;
 use App\Http\Resources\Project\ProjectResource;
+use App\Models\Activity;
+use App\Models\Attachment;
 use App\Models\ClientCompany;
+use App\Models\Comment;
 use App\Models\Currency;
+use App\Models\Note;
 use App\Models\Project;
+use App\Models\Task;
+use App\Models\TaskGroup;
+use App\Models\TimeLog;
 use App\Models\User;
 use App\Services\ProjectService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
@@ -122,6 +132,97 @@ class ProjectController extends Controller
         $project->unArchive();
 
         return redirect()->back()->success('Project restored', 'The restoring of the project was completed successfully.');
+    }
+
+    public function permanentDelete(int $projectId)
+    {
+        try {
+            return DB::transaction(function () use ($projectId) {
+                $project = Project::withArchived()->lockForUpdate()->findOrFail($projectId);
+
+                $this->authorize('forceDelete', $project);
+
+                if (! $project->isArchived()) {
+                    return redirect()->back()->warning('Action stopped', 'The project is not archived. Only archived projects can be permanently deleted.');
+                }
+
+                $hasInvoicedTasks = Task::withArchived()
+                    ->where('project_id', $project->id)
+                    ->whereNotNull('invoice_id')
+                    ->exists();
+
+                if ($hasInvoicedTasks) {
+                    return redirect()->back()->warning('Action stopped', 'Cannot permanently delete this project because it contains tasks that have been billed on an invoice. Invoiced tasks must be retained for financial records.');
+                }
+
+                $taskIds = Task::withArchived()->where('project_id', $project->id)->pluck('id');
+
+                // Attachments
+                $attachments = Attachment::whereIn('task_id', $taskIds)->get();
+                foreach ($attachments as $attachment) {
+                    if (! empty($attachment->path) && File::exists(public_path($attachment->path))) {
+                        File::delete(public_path($attachment->path));
+                    }
+                    if (! empty($attachment->thumb) && File::exists(public_path($attachment->thumb))) {
+                        File::delete(public_path($attachment->thumb));
+                    }
+                    $attachment->delete();
+                }
+
+                // Comments & comment activities
+                $comments = Comment::whereIn('task_id', $taskIds)->get();
+                foreach ($comments as $comment) {
+                    Activity::where('activity_capable_type', Comment::class)->where('activity_capable_id', $comment->id)->delete();
+                    $comment->delete();
+                }
+
+                // Time logs
+                TimeLog::whereIn('task_id', $taskIds)->delete();
+
+                // Task pivots
+                DB::table('label_task')->whereIn('task_id', $taskIds)->delete();
+                DB::table('subscribe_task')->whereIn('task_id', $taskIds)->delete();
+
+                // Task activities & Tasks
+                Activity::where('activity_capable_type', Task::class)->whereIn('activity_capable_id', $taskIds)->delete();
+                Task::withArchived()->where('project_id', $project->id)->delete();
+
+                // Task groups & group activities
+                $groupIds = TaskGroup::withArchived()->where('project_id', $project->id)->pluck('id');
+                Activity::where('activity_capable_type', TaskGroup::class)->whereIn('activity_capable_id', $groupIds)->delete();
+                TaskGroup::withArchived()->where('project_id', $project->id)->delete();
+
+                // Project user access
+                DB::table('project_user_access')->where('project_id', $project->id)->delete();
+
+                // Project notes
+                Note::where('project_id', $project->id)->delete();
+
+                // Project activities
+                Activity::where('project_id', $project->id)->delete();
+                Activity::where('activity_capable_type', Project::class)->where('activity_capable_id', $project->id)->delete();
+
+                // Favorites
+                DB::table('favorites')->where('favoriteable_type', Project::class)->where('favoriteable_id', $project->id)->delete();
+
+                $projectName = $project->name;
+                $project->delete();
+
+                Log::info("Project #{$projectId} ('{$projectName}') permanently deleted by user #" . auth()->id());
+
+                return redirect()->back()->success('Project deleted', 'The project was permanently deleted.');
+            });
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Failed to permanently delete project #{$projectId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'This project cannot be permanently deleted because of dependent records.');
+        } catch (\Exception $e) {
+            Log::error("Failed to permanently delete project #{$projectId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'An error occurred while deleting the project: ' . $e->getMessage());
+        }
     }
 
     public function favoriteToggle(Project $project)

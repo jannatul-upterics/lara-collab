@@ -10,7 +10,10 @@ export default function TableRow({ item }) {
       <Table.Td>
         <Text fz="sm">{item.name}</Text>
       </Table.Td>
-      {(can("edit label") || can("archive label") || can("restore label")) && (
+      {(can("edit label") ||
+        can("archive label") ||
+        can("restore label") ||
+        (typeof isAdmin === "function" && isAdmin() && route().params.archived)) && (
         <Table.Td w={100}>
           <TableRowActions
             item={item}
@@ -29,6 +32,12 @@ export default function TableRow({ item }) {
               title: "Restore label",
               content: "Are you sure you want to restore this label?",
               confirmLabel: "Restore",
+            }}
+            permanentDelete={{
+              route: "settings.labels.permanent-delete",
+              title: "Permanently delete label",
+              content: `Are you sure you want to permanently delete label "${item.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+              confirmLabel: "Delete permanently",
             }}
           />
         </Table.Td>

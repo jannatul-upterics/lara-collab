@@ -38,7 +38,10 @@ export default function TableRow({ item }) {
           ))}
         </Group>
       </Table.Td>
-      {(can("edit client user") || can("archive client user") || can("restore client user")) && (
+      {(can("edit client user") ||
+        can("archive client user") ||
+        can("restore client user") ||
+        (typeof isAdmin === "function" && isAdmin() && route().params.archived)) && (
         <Table.Td>
           <TableRowActions
             item={item}
@@ -59,6 +62,12 @@ export default function TableRow({ item }) {
               title: "Restore client",
               content: `Are you sure you want to restore this client? This action will allow the client to login.`,
               confirmLabel: "Restore",
+            }}
+            permanentDelete={{
+              route: "clients.users.permanent-delete",
+              title: "Permanently delete client",
+              content: `Are you sure you want to permanently delete client "${item.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+              confirmLabel: "Delete permanently",
             }}
           />
         </Table.Td>

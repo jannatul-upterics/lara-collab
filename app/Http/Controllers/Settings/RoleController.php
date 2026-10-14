@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -85,5 +86,49 @@ class RoleController extends Controller
         $role->unArchive();
 
         return redirect()->back()->success('Role restored', 'The restoring of the role was completed successfully.');
+    }
+
+    public function permanentDelete(int $roleId)
+    {
+        try {
+            return DB::transaction(function () use ($roleId) {
+                $role = Role::withArchived()->lockForUpdate()->findOrFail($roleId);
+
+                $this->authorize('forceDelete', $role);
+
+                if (! $role->isArchived()) {
+                    return redirect()->back()->warning('Action stopped', 'The role is not archived. Only archived roles can be permanently deleted.');
+                }
+
+                if (in_array($role->name, ['admin', 'client'])) {
+                    return redirect()->back()->warning('Action stopped', 'Default system roles (admin, client) cannot be permanently deleted.');
+                }
+
+                $usersWithRole = DB::table('model_has_roles')->where('role_id', $role->id)->exists();
+                if ($usersWithRole) {
+                    return redirect()->back()->warning('Action stopped', 'You cannot permanently delete a role that is currently assigned to users. Reassign the users first.');
+                }
+
+                $roleName = $role->name;
+                $role->syncPermissions([]);
+                $role->delete();
+
+                app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+                Log::info("Role #{$roleId} ('{$roleName}') permanently deleted by user #" . auth()->id());
+
+                return redirect()->back()->success('Role deleted', 'The role was permanently deleted.');
+            });
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Failed to permanently delete role #{$roleId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'This role cannot be permanently deleted because of dependent records.');
+        } catch (\Exception $e) {
+            Log::error("Failed to permanently delete role #{$roleId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'An error occurred while deleting the role: ' . $e->getMessage());
+        }
     }
 }

@@ -62,4 +62,12 @@ class ProjectPolicy
     {
         return $user->hasPermissionTo('edit project user access') && $user->hasProjectAccess($project);
     }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Project $project): bool
+    {
+        return $user->isAdmin();
+    }
 }

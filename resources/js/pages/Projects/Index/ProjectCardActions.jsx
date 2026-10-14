@@ -2,12 +2,13 @@ import { openConfirmModal } from "@/components/ConfirmModal";
 import useForm from "@/hooks/useForm";
 import { router } from "@inertiajs/react";
 import { ActionIcon, Menu, rem } from "@mantine/core";
-import { IconArchive, IconArchiveOff, IconDots, IconPencil, IconUsers } from "@tabler/icons-react";
+import { IconArchive, IconArchiveOff, IconDots, IconPencil, IconTrash, IconUsers } from "@tabler/icons-react";
 import UserAccessModal from "./Modals/UserAccessModal.jsx";
 
 export default function ProjectCardActions({ item }) {
   const [archiveForm] = useForm("delete", route("projects.destroy", item.id));
   const [restoreForm] = useForm("post", route("projects.restore", item.id));
+  const [deleteForm] = useForm("delete", route("projects.permanent-delete", item.id));
 
   const openArchiveModal = () =>
     openConfirmModal({
@@ -29,6 +30,19 @@ export default function ProjectCardActions({ item }) {
       onConfirm: () => restoreForm.submit({ preserveScroll: true }),
     });
 
+  const openPermanentDeleteModal = () =>
+    openConfirmModal({
+      type: "danger",
+      title: "Permanently delete project",
+      content: `Are you sure you want to permanently delete project "${item.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+      confirmLabel: "Delete permanently",
+      confirmProps: { color: "red" },
+      onConfirm: () => {
+        if (deleteForm.processing) return;
+        deleteForm.submit({ preserveScroll: true });
+      },
+    });
+
   const openUserAccess = () => UserAccessModal(item);
 
   return (
@@ -36,7 +50,8 @@ export default function ProjectCardActions({ item }) {
       {(can("edit project user access") ||
         can("edit project") ||
         can("restore project") ||
-        can("archive project")) && (
+        can("archive project") ||
+        (typeof isAdmin === "function" && isAdmin() && route().params.archived)) && (
         <Menu
           withArrow
           position="bottom-end"
@@ -95,6 +110,23 @@ export default function ProjectCardActions({ item }) {
                 data-ignore-link
               >
                 Restore
+              </Menu.Item>
+            )}
+            {typeof isAdmin === "function" && isAdmin() && route().params.archived && (
+              <Menu.Item
+                leftSection={
+                  <IconTrash
+                    style={{ width: rem(16), height: rem(16) }}
+                    stroke={1.5}
+                    data-ignore-link
+                  />
+                }
+                color="red"
+                onClick={openPermanentDeleteModal}
+                disabled={deleteForm.processing}
+                data-ignore-link
+              >
+                Permanent delete
               </Menu.Item>
             )}
             {can("archive project") && !route().params.archived && (

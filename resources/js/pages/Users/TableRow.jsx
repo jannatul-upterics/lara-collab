@@ -2,9 +2,13 @@ import RoleBadge from "@/components/RoleBadge";
 import TableRowActions from "@/components/TableRowActions";
 import { money } from "@/utils/currency";
 import { getInitials } from "@/utils/user";
+import { usePage } from "@inertiajs/react";
 import { Avatar, Flex, Group, Table, Text } from "@mantine/core";
 
 export default function TableRow({ item }) {
+  const { auth } = usePage().props;
+  const isSelf = auth?.user?.id === item.id;
+
   return (
     <Table.Tr key={item.id}>
       <Table.Td>
@@ -49,7 +53,10 @@ export default function TableRow({ item }) {
           </Text>
         </Table.Td>
       )}
-      {(can("edit user") || can("archive user") || can("restore user")) && (
+      {(can("edit user") ||
+        can("archive user") ||
+        can("restore user") ||
+        (typeof isAdmin === "function" && isAdmin() && route().params.archived && !isSelf)) && (
         <Table.Td>
           <TableRowActions
             item={item}
@@ -71,6 +78,16 @@ export default function TableRow({ item }) {
               content: `Are you sure you want to restore this user? This action will allow the user to login.`,
               confirmLabel: "Restore",
             }}
+            permanentDelete={
+              !isSelf
+                ? {
+                    route: "users.permanent-delete",
+                    title: "Permanently delete user",
+                    content: `Are you sure you want to permanently delete user "${item.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+                    confirmLabel: "Delete permanently",
+                  }
+                : null
+            }
           />
         </Table.Td>
       )}

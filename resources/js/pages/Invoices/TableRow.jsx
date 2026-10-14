@@ -86,7 +86,10 @@ export default function TableRow({ item }) {
           </Text>
         </Tooltip>
       </Table.Td>
-      {(can("edit invoice") || can("archive invoice") || can("restore invoice")) && (
+      {(can("edit invoice") ||
+        can("archive invoice") ||
+        can("restore invoice") ||
+        (typeof isAdmin === "function" && isAdmin() && route().params.archived)) && (
         <Table.Td>
           <TableRowActions
             item={item}
@@ -105,6 +108,12 @@ export default function TableRow({ item }) {
               title: "Restore invoice",
               content: `Are you sure you want to restore this invoice?`,
               confirmLabel: "Restore",
+            }}
+            permanentDelete={{
+              route: "invoices.permanent-delete",
+              title: "Permanently delete invoice",
+              content: `Are you sure you want to permanently delete invoice #${item.number}? This operation is irreversible and the record cannot be restored afterward.`,
+              confirmLabel: "Delete permanently",
             }}
           >
             {can("download invoice") && (

@@ -12,6 +12,8 @@ use App\Events\Task\TaskUpdated;
 use App\Http\Requests\Task\StoreTaskRequest;
 use App\Http\Requests\Task\UpdateTaskRequest;
 use App\Http\Resources\TaskPriorityResource;
+use App\Models\Activity;
+use App\Models\Comment;
 use App\Models\Label;
 use App\Models\OwnerCompany;
 use App\Models\Project;
@@ -22,6 +24,9 @@ use App\Services\PermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -166,5 +171,75 @@ class TaskController extends Controller
         TaskRestored::dispatch($task);
 
         return redirect()->back()->success('Task restored', 'The restoring of the Task was completed successfully.');
+    }
+
+    public function permanentDelete(Project $project, Task $task): RedirectResponse
+    {
+        try {
+            return DB::transaction(function () use ($project, $task) {
+                $task = Task::withArchived()
+                    ->where('project_id', $project->id)
+                    ->lockForUpdate()
+                    ->findOrFail($task->id);
+
+                $this->authorize('forceDelete', [$task, $project]);
+
+                if (! $task->isArchived()) {
+                    return redirect()->back()->warning('Action stopped', 'The task is not archived. Only archived tasks can be permanently deleted.');
+                }
+
+                if ($task->invoice_id !== null) {
+                    $invoiceNumber = $task->invoice?->number ?? $task->invoice_id;
+                    return redirect()->back()->warning('Action stopped', "Cannot permanently delete this task because it is linked to an invoice (#{$invoiceNumber}). Invoiced tasks must be retained for financial records.");
+                }
+
+                // Attachments & physical files
+                foreach ($task->attachments as $attachment) {
+                    if (! empty($attachment->path) && File::exists(public_path($attachment->path))) {
+                        File::delete(public_path($attachment->path));
+                    }
+                    if (! empty($attachment->thumb) && File::exists(public_path($attachment->thumb))) {
+                        File::delete(public_path($attachment->thumb));
+                    }
+                    $attachment->delete();
+                }
+
+                // Comments & their activities
+                foreach ($task->comments as $comment) {
+                    Activity::where('activity_capable_type', Comment::class)->where('activity_capable_id', $comment->id)->delete();
+                    $comment->delete();
+                }
+
+                // Time logs
+                $task->timeLogs()->delete();
+
+                // Detach pivots
+                DB::table('label_task')->where('task_id', $task->id)->delete();
+                DB::table('subscribe_task')->where('task_id', $task->id)->delete();
+
+                // Task activities
+                Activity::where('activity_capable_type', Task::class)->where('activity_capable_id', $task->id)->delete();
+
+                $taskName = $task->name;
+                $taskId = $task->id;
+                $task->delete();
+
+                TaskDeleted::dispatch($taskId, $project->id);
+
+                Log::info("Task #{$taskId} ('{$taskName}') in Project #{$project->id} permanently deleted by user #" . auth()->id());
+
+                return redirect()->back()->success('Task deleted', 'The task was permanently deleted.');
+            });
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Failed to permanently delete task #{$task->id}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'This task cannot be permanently deleted because of dependent records.');
+        } catch (\Exception $e) {
+            Log::error("Failed to permanently delete task #{$task->id}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'An error occurred while deleting the task: ' . $e->getMessage());
+        }
     }
 }

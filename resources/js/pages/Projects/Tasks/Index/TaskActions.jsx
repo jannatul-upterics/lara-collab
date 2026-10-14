@@ -1,6 +1,6 @@
 import { openConfirmModal } from "@/components/ConfirmModal";
 import { ActionIcon, Group, Menu, rem } from "@mantine/core";
-import { IconArchive, IconArchiveOff, IconDots } from "@tabler/icons-react";
+import { IconArchive, IconArchiveOff, IconDots, IconTrash } from "@tabler/icons-react";
 import { useForm } from "laravel-precognition-react-inertia";
 
 export default function TaskActions({ task, ...props }) {
@@ -9,6 +9,10 @@ export default function TaskActions({ task, ...props }) {
     route("projects.tasks.destroy", [task.project_id, task.id]),
   );
   const restoreForm = useForm("post", route("projects.tasks.restore", [task.project_id, task.id]));
+  const deleteForm = useForm(
+    "delete",
+    route("projects.tasks.permanent-delete", [task.project_id, task.id]),
+  );
 
   const openArchiveModal = () =>
     openConfirmModal({
@@ -30,10 +34,24 @@ export default function TaskActions({ task, ...props }) {
       onConfirm: () => restoreForm.submit({ preserveScroll: true }),
     });
 
+  const openPermanentDeleteModal = () =>
+    openConfirmModal({
+      type: "danger",
+      title: "Permanently delete task",
+      content: `Are you sure you want to permanently delete task "${task.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+      confirmLabel: "Delete permanently",
+      confirmProps: { color: "red" },
+      onConfirm: () => {
+        if (deleteForm.processing) return;
+        deleteForm.submit({ preserveScroll: true });
+      },
+    });
+
   return (
     <Group gap={0} justify="flex-end" {...props}>
       {((can("archive task") && !route().params.archived) ||
-        (can("restore task") && route().params.archived)) && (
+        ((can("restore task") || (typeof isAdmin === "function" && isAdmin())) &&
+          route().params.archived)) && (
         <Menu
           withArrow
           position="bottom-end"
@@ -57,6 +75,18 @@ export default function TaskActions({ task, ...props }) {
                 onClick={openRestoreModal}
               >
                 Restore
+              </Menu.Item>
+            )}
+            {typeof isAdmin === "function" && isAdmin() && route().params.archived && (
+              <Menu.Item
+                leftSection={
+                  <IconTrash style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
+                }
+                color="red"
+                onClick={openPermanentDeleteModal}
+                disabled={deleteForm.processing}
+              >
+                Permanent delete
               </Menu.Item>
             )}
             {can("archive task") && !route().params.archived && (

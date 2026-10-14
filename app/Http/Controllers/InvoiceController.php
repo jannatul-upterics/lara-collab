@@ -11,10 +11,12 @@ use App\Models\ClientCompany;
 use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Project;
+use App\Models\Task;
 use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -112,6 +114,50 @@ class InvoiceController extends Controller
         $invoice->unArchive();
 
         return redirect()->back()->success('Invoice restored', 'The restoring of the invoice was completed successfully.');
+    }
+
+    public function permanentDelete(int $invoiceId)
+    {
+        try {
+            return DB::transaction(function () use ($invoiceId) {
+                $invoice = Invoice::withArchived()->lockForUpdate()->findOrFail($invoiceId);
+
+                $this->authorize('forceDelete', $invoice);
+
+                if (! $invoice->isArchived()) {
+                    return redirect()->back()->warning('Action stopped', 'The invoice is not archived. Only archived invoices can be permanently deleted.');
+                }
+
+                if ($invoice->status === 'paid') {
+                    return redirect()->back()->warning('Action stopped', 'Paid invoices cannot be permanently deleted for financial accounting and compliance reasons.');
+                }
+
+                // Disassociate tasks by resetting invoice_id to null
+                Task::where('invoice_id', $invoice->id)->update(['invoice_id' => null]);
+
+                // Delete PDF from storage disk
+                if (! empty($invoice->filename)) {
+                    Storage::drive('invoices')->delete($invoice->filename);
+                }
+
+                $invoiceNumber = $invoice->number;
+                $invoice->delete();
+
+                Log::info("Invoice #{$invoiceId} ('{$invoiceNumber}') permanently deleted by user #" . auth()->id());
+
+                return redirect()->back()->success('Invoice deleted', 'The invoice was permanently deleted.');
+            });
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Failed to permanently delete invoice #{$invoiceId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'This invoice cannot be permanently deleted because of dependent records.');
+        } catch (\Exception $e) {
+            Log::error("Failed to permanently delete invoice #{$invoiceId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'An error occurred while deleting the invoice: ' . $e->getMessage());
+        }
     }
 
     public function setStatus(Request $request, Invoice $invoice)

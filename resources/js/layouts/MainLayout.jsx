@@ -9,7 +9,9 @@ import { AppShell } from "@mantine/core";
 import { useEffect } from "react";
 
 export default function MainLayout({ children, title }) {
-  window.can = useAuthorization().can;
+  const { can, isAdmin } = useAuthorization();
+  window.can = can;
+  window.isAdmin = isAdmin;
 
   const { initUserWebSocket } = useWebSockets();
   const { notifications } = usePage().props.auth;

@@ -63,4 +63,12 @@ class TaskPolicy
     {
         return $user->hasPermissionTo('complete task') && $user->hasProjectAccess($project);
     }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Task $task, Project $project): bool
+    {
+        return $user->isAdmin() && $user->hasProjectAccess($project);
+    }
 }

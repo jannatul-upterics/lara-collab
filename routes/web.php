@@ -37,6 +37,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::group(['prefix' => 'projects', 'as' => 'projects.'], function () {
         // PROJECT
         Route::post('{projectId}/restore', [ProjectController::class, 'restore'])->name('restore');
+        Route::delete('{projectId}/permanent-delete', [ProjectController::class, 'permanentDelete'])->name('permanent-delete');
         Route::put('{project}/favorite/toggle', [ProjectController::class, 'favoriteToggle'])->name('favorite.toggle');
         Route::post('{project}/user-access', [ProjectController::class, 'userAccess'])->name('user_access');
 
@@ -45,6 +46,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::put('{project}/task-groups/{taskGroup}', [GroupController::class, 'update'])->name('task-groups.update')->scopeBindings();
         Route::delete('{project}/task-groups/{taskGroup}', [GroupController::class, 'destroy'])->name('task-groups.destroy')->scopeBindings();
         Route::post('{project}/task-groups/{taskGroupId}/restore', [GroupController::class, 'restore'])->name('task-groups.restore')->scopeBindings();
+        Route::delete('{project}/task-groups/{taskGroupId}/permanent-delete', [GroupController::class, 'permanentDelete'])->name('task-groups.permanent-delete')->scopeBindings();
         Route::post('{project}/task-groups/reorder', [GroupController::class, 'reorder'])->name('task-groups.reorder');
 
         // TASKS
@@ -54,6 +56,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('{project}/tasks/{task}/open', [TaskController::class, 'index'])->name('tasks.open')->scopeBindings();
         Route::delete('{project}/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->scopeBindings();
         Route::post('{project}/tasks/{task}/restore', [TaskController::class, 'restore'])->name('tasks.restore')->scopeBindings();
+        Route::delete('{project}/tasks/{task}/permanent-delete', [TaskController::class, 'permanentDelete'])->name('tasks.permanent-delete')->scopeBindings();
 
         Route::post('{project}/tasks/{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->scopeBindings();
         Route::post('{project}/tasks/reorder', [TaskController::class, 'reorder'])->name('tasks.reorder');
@@ -99,14 +102,17 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::group(['prefix' => 'clients', 'as' => 'clients.'], function () {
         Route::resource('users', ClientUserController::class)->except(['show']);
         Route::post('users/{userId}/restore', [ClientUserController::class, 'restore'])->name('users.restore');
+        Route::delete('users/{userId}/permanent-delete', [ClientUserController::class, 'permanentDelete'])->name('users.permanent-delete');
 
         Route::resource('companies', ClientCompanyController::class)->except(['show']);
         Route::post('companies/{companyId}/restore', [ClientCompanyController::class, 'restore'])->name('companies.restore');
+        Route::delete('companies/{companyId}/permanent-delete', [ClientCompanyController::class, 'permanentDelete'])->name('companies.permanent-delete');
     });
 
     // Users
     Route::resource('users', UserController::class)->except(['show']);
     Route::post('users/{userId}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::delete('users/{userId}/permanent-delete', [UserController::class, 'permanentDelete'])->name('users.permanent-delete');
 
     // Invoices
     Route::resource('invoices', InvoiceController::class)->except(['show']);
@@ -114,6 +120,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('tasks', [InvoiceTasksController::class, 'index'])->name('tasks');
         Route::put('{invoice}/status', [InvoiceController::class, 'setStatus'])->name('status');
         Route::post('{invoice}/restore', [InvoiceController::class, 'restore'])->name('restore');
+        Route::delete('{invoice}/permanent-delete', [InvoiceController::class, 'permanentDelete'])->name('permanent-delete');
         Route::get('{invoice}/download', [InvoiceController::class, 'download'])->name('download');
         Route::get('{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('pdf');
     });
@@ -132,9 +139,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         Route::resource('roles', RoleController::class)->except(['show']);
         Route::post('roles/{roleId}/restore', [RoleController::class, 'restore'])->name('roles.restore');
+        Route::delete('roles/{roleId}/permanent-delete', [RoleController::class, 'permanentDelete'])->name('roles.permanent-delete');
 
         Route::resource('labels', LabelController::class)->except(['show']);
         Route::post('labels/{labelId}/restore', [LabelController::class, 'restore'])->name('labels.restore');
+        Route::delete('labels/{labelId}/permanent-delete', [LabelController::class, 'permanentDelete'])->name('labels.permanent-delete');
 
         Route::resource('task-priorities', TaskPriorityController::class)->except(['show']);
         Route::post('task-priorities/{priorityId}/restore', [TaskPriorityController::class, 'restore'])->name('task-priorities.restore');

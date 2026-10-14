@@ -42,7 +42,8 @@ export default function TableRow({ item }) {
       </Table.Td>
       {(can('edit client company') ||
         can('archive client company') ||
-        can('restore client company')) && (
+        can('restore client company') ||
+        (typeof isAdmin === 'function' && isAdmin() && route().params.archived)) && (
         <Table.Td>
           <TableRowActions
             item={item}
@@ -61,6 +62,12 @@ export default function TableRow({ item }) {
               title: 'Restore company',
               content: `Are you sure you want to restore this company?`,
               confirmLabel: 'Restore',
+            }}
+            permanentDelete={{
+              route: 'clients.companies.permanent-delete',
+              title: 'Permanently delete company',
+              content: `Are you sure you want to permanently delete company "${item.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+              confirmLabel: 'Delete permanently',
             }}
           />
         </Table.Td>

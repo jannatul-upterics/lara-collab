@@ -1,6 +1,6 @@
 import { openConfirmModal } from "@/components/ConfirmModal";
 import { ActionIcon, Group, Menu, rem } from "@mantine/core";
-import { IconArchive, IconArchiveOff, IconDots, IconPencil } from "@tabler/icons-react";
+import { IconArchive, IconArchiveOff, IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useForm } from "laravel-precognition-react-inertia";
 import EditTasksGroupModal from "./Modals/EditTasksGroupModal";
 
@@ -12,6 +12,10 @@ export default function TaskGroupActions({ group, ...props }) {
   const restoreForm = useForm(
     "post",
     route("projects.task-groups.restore", [group.project_id, group.id]),
+  );
+  const deleteForm = useForm(
+    "delete",
+    route("projects.task-groups.permanent-delete", [group.project_id, group.id]),
   );
 
   const openArchiveModal = () =>
@@ -34,12 +38,26 @@ export default function TaskGroupActions({ group, ...props }) {
       onConfirm: () => restoreForm.submit({ preserveScroll: true }),
     });
 
+  const openPermanentDeleteModal = () =>
+    openConfirmModal({
+      type: "danger",
+      title: "Permanently delete task group",
+      content: `Are you sure you want to permanently delete task group "${group.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+      confirmLabel: "Delete permanently",
+      confirmProps: { color: "red" },
+      onConfirm: () => {
+        if (deleteForm.processing) return;
+        deleteForm.submit({ preserveScroll: true });
+      },
+    });
+
   const openEditModal = () => EditTasksGroupModal(group);
 
   return (
     <Group gap={0} justify="flex-end" {...props}>
       {((can("archive task group") && !route().params.archived) ||
-        (can("restore task group") && route().params.archived) ||
+        ((can("restore task group") || (typeof isAdmin === "function" && isAdmin())) &&
+          route().params.archived) ||
         (can("edit task group") && !route().params.archived)) && (
         <Menu
           withArrow
@@ -74,6 +92,18 @@ export default function TaskGroupActions({ group, ...props }) {
                 onClick={openRestoreModal}
               >
                 Restore
+              </Menu.Item>
+            )}
+            {typeof isAdmin === "function" && isAdmin() && route().params.archived && (
+              <Menu.Item
+                leftSection={
+                  <IconTrash style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
+                }
+                color="red"
+                onClick={openPermanentDeleteModal}
+                disabled={deleteForm.processing}
+              >
+                Permanent delete
               </Menu.Item>
             )}
             {can("archive task group") && !route().params.archived && (

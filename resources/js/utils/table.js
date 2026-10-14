@@ -5,5 +5,5 @@ export const prepareColumns = (columns) => {
 export const actionColumnVisibility = (name) => {
   return (can(`edit ${name}`) && !route().params.archived) ||
     (can(`archive ${name}`) && !route().params.archived) ||
-    (can(`restore ${name}`) && route().params.archived);
+    ((can(`restore ${name}`) || (typeof isAdmin === 'function' && isAdmin())) && route().params.archived);
 };

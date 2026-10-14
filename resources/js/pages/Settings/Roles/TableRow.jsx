@@ -16,8 +16,11 @@ export default function TableRow({ item }) {
       <Table.Td w={165}>
         <Text fz="sm">{item.permissions_count}</Text>
       </Table.Td>
-      {(can("edit role") || can("archive role") || can("restore role")) &&
-        item.name !== "admin" && (
+      {(can("edit role") ||
+        can("archive role") ||
+        can("restore role") ||
+        (typeof isAdmin === "function" && isAdmin() && route().params.archived)) &&
+        !isLocked(item.name) && (
           <Table.Td w={100}>
             <TableRowActions
               item={item}
@@ -36,6 +39,12 @@ export default function TableRow({ item }) {
                 title: "Restore role",
                 content: "Are you sure you want to restore this role?",
                 confirmLabel: "Restore",
+              }}
+              permanentDelete={{
+                route: "settings.roles.permanent-delete",
+                title: "Permanently delete role",
+                content: `Are you sure you want to permanently delete role "${item.name}"? This operation is irreversible and the record cannot be restored afterward.`,
+                confirmLabel: "Delete permanently",
               }}
             />
           </Table.Td>

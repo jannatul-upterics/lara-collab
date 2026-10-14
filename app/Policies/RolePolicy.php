@@ -46,4 +46,12 @@ class RolePolicy
     {
         return $user->hasPermissionTo('restore role');
     }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Role $role): bool
+    {
+        return $user->isAdmin() && ! in_array($role->name, ['admin', 'client']);
+    }
 }

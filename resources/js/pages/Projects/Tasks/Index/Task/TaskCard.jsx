@@ -74,7 +74,9 @@ export default function TaskCard({ task, index }) {
                 </Tooltip>
               )}
 
-              {(can("archive task") || can("restore task")) && (
+              {(can("archive task") ||
+                can("restore task") ||
+                (typeof isAdmin === "function" && isAdmin() && route().params.archived)) && (
                 <TaskActions task={task} className={classes.actions} />
               )}
             </Group>

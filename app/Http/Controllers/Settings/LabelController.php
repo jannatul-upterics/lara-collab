@@ -8,6 +8,8 @@ use App\Http\Requests\Label\UpdateLabelRequest;
 use App\Http\Resources\Label\LabelResource;
 use App\Models\Label;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -70,5 +72,40 @@ class LabelController extends Controller
         $label->unArchive();
 
         return redirect()->back()->success('Label restored', 'The restoring of the label was completed successfully.');
+    }
+
+    public function permanentDelete(int $labelId)
+    {
+        try {
+            return DB::transaction(function () use ($labelId) {
+                $label = Label::withArchived()->lockForUpdate()->findOrFail($labelId);
+
+                $this->authorize('forceDelete', $label);
+
+                if (! $label->isArchived()) {
+                    return redirect()->back()->warning('Action stopped', 'The label is not archived. Only archived labels can be permanently deleted.');
+                }
+
+                // Detach all tasks from label_task pivot
+                DB::table('label_task')->where('label_id', $label->id)->delete();
+
+                $labelName = $label->name;
+                $label->delete();
+
+                Log::info("Label #{$labelId} ('{$labelName}') permanently deleted by user #" . auth()->id());
+
+                return redirect()->back()->success('Label deleted', 'The label was permanently deleted.');
+            });
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Failed to permanently delete label #{$labelId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'This label cannot be permanently deleted because of dependent records.');
+        } catch (\Exception $e) {
+            Log::error("Failed to permanently delete label #{$labelId}: " . $e->getMessage());
+            return redirect()->back()->warning('Action stopped', 'An error occurred while deleting the label: ' . $e->getMessage());
+        }
     }
 }
