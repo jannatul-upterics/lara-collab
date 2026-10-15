@@ -32,6 +32,7 @@ class UpdateOwnerCompanyRequest extends FormRequest
                     ->dimensions(Rule::dimensions()->ratio(15 / 4)),
                 'nullable',
             ],
+            'currency_id' => 'integer|nullable|exists:currencies,id',
         ];
     }
 }

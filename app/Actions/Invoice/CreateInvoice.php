@@ -31,7 +31,7 @@ class CreateInvoice
                     'number' => $data['number'],
                     'type' => $data['type'],
                     'amount' => $amount,
-                    'amount_with_tax' => $amount * (1 + ($ownerCompany->tax / 10000)),
+                    'amount_with_tax' => $amount * (1 + (($ownerCompany->tax ?? 0) / 10000)),
                     'due_date' => today()->addWeeks(2),
                     'note' => $data['note'],
                     'hourly_rate' => $data['hourly_rate'],

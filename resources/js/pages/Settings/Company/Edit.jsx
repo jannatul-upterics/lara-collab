@@ -20,27 +20,31 @@ import {
 const CompanyEdit = () => {
   const {
     item,
-    dropdowns: { countries, currencies },
+    dropdowns,
   } = usePage().props;
+
+  const currentItem = item || {};
+  const countries = dropdowns?.countries || [];
+  const currencies = dropdowns?.currencies || [];
 
   const [form, submit, updateValue] = useForm('post', route('settings.company.update'), {
     _method: 'put',
     logo: null,
-    name: item.name || '',
-    address: item.address || '',
-    postal_code: item.postal_code || '',
-    city: item.city || '',
-    country_id: item.country_id || '',
-    currency_id: item.currency_id || '',
-    email: item.email || '',
-    phone: item.phone || '',
-    web: item.web || '',
-    iban: item.iban || '',
-    swift: item.swift || '',
-    business_id: item.business_id || '',
-    tax_id: item.tax_id || '',
-    vat: item.vat || '',
-    tax: item.tax / 100 || 0,
+    name: currentItem.name || '',
+    address: currentItem.address || '',
+    postal_code: currentItem.postal_code || '',
+    city: currentItem.city || '',
+    country_id: currentItem.country_id || '',
+    currency_id: currentItem.currency_id || '',
+    email: currentItem.email || '',
+    phone: currentItem.phone || '',
+    web: currentItem.web || '',
+    iban: currentItem.iban || '',
+    swift: currentItem.swift || '',
+    business_id: currentItem.business_id || '',
+    tax_id: currentItem.tax_id || '',
+    vat: currentItem.vat || '',
+    tax: currentItem.tax ? currentItem.tax / 100 : 0,
   });
 
   return (
@@ -65,9 +69,9 @@ const CompanyEdit = () => {
             gutter='lg'
           >
             <Grid.Col span='content'>
-              {item.logo || form.data.logo ? (
+              {currentItem.logo || form.data.logo ? (
                 <Image
-                  src={form.data.logo === null ? item.logo : URL.createObjectURL(form.data.logo)}
+                  src={form.data.logo === null ? currentItem.logo : URL.createObjectURL(form.data.logo)}
                   w={240}
                   h={64}
                   fit="contain"
@@ -297,6 +301,6 @@ const CompanyEdit = () => {
   );
 };
 
-CompanyEdit.layout = page => <Layout title='Edit user'>{page}</Layout>;
+CompanyEdit.layout = page => <Layout title='Company'>{page}</Layout>;
 
 export default CompanyEdit;

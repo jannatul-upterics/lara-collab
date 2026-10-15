@@ -1,5 +1,6 @@
 import Logo from "@/components/Logo";
 import useNavigationStore from "@/hooks/store/useNavigationStore";
+import useAuthorization from "@/hooks/useAuthorization";
 import { usePage } from "@inertiajs/react";
 import { Group, ScrollArea, Text, rem } from "@mantine/core";
 import {
@@ -19,6 +20,8 @@ import classes from "./css/NavBarNested.module.css";
 
 export default function Sidebar() {
   const { version } = usePage().props;
+  const { url } = usePage();
+  const { can } = useAuthorization();
   const { items, setItems } = useNavigationStore();
 
   useEffect(() => {
@@ -125,7 +128,7 @@ export default function Sidebar() {
         icon: IconSettings,
         active: route().current("settings.*"),
         opened: route().current("settings.*"),
-        visible: can("view owner company") || can("view roles") || can("view labels"),
+        visible: can("view owner company") || can("view roles") || can("view labels") || can("view task priority"),
         links: [
           {
             label: "Company",
@@ -145,10 +148,16 @@ export default function Sidebar() {
             active: route().current("settings.labels.*"),
             visible: can("view labels"),
           },
+          {
+            label: "Priorities",
+            link: route("settings.task-priorities.index"),
+            active: route().current("settings.task-priorities.*"),
+            visible: can("view task priority"),
+          },
         ],
       },
     ]);
-  }, []);
+  }, [url]);
 
   return (
     <nav className={classes.navbar}>

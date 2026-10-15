@@ -1,3 +1,4 @@
+import ErrorBoundary from "@/components/ErrorBoundary";
 import FlashNotification from "@/components/FlashNotification";
 import useNotificationsStore from "@/hooks/store/useNotificationsStore";
 import useAuthorization from "@/hooks/useAuthorization";
@@ -14,12 +15,17 @@ export default function MainLayout({ children, title }) {
   window.isAdmin = isAdmin;
 
   const { initUserWebSocket } = useWebSockets();
-  const { notifications } = usePage().props.auth;
+  const auth = usePage().props.auth;
+  const notifications = auth?.notifications;
   const { setNotifications } = useNotificationsStore();
 
   useEffect(() => {
-    initUserWebSocket();
-    setNotifications(notifications);
+    if (auth?.user) {
+      initUserWebSocket();
+    }
+    if (notifications) {
+      setNotifications(notifications);
+    }
   }, []);
 
   return (
@@ -37,7 +43,9 @@ export default function MainLayout({ children, title }) {
         <NavBarNested></NavBarNested>
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      <AppShell.Main>
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </AppShell.Main>
     </AppShell>
   );
 }

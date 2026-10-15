@@ -40,6 +40,45 @@ it('renders owner company settings for admin', function () {
     $response->assertStatus(200);
 });
 
+it('renders owner company settings even when no company exists in database', function () {
+    $this->actingAs($this->admin);
+    OwnerCompany::query()->delete();
+
+    $response = $this->get('/settings/company');
+
+    $response->assertStatus(200);
+});
+
+it('creates owner company details when none exists', function () {
+    $this->actingAs($this->admin);
+    OwnerCompany::query()->delete();
+
+    $response = $this->put('/settings/company', [
+        'name' => 'Initial Company',
+        'address' => '123 Starter Way',
+        'postal_code' => '10001',
+        'city' => 'Startup City',
+        'country_id' => $this->country->id,
+        'currency_id' => $this->currency->id,
+        'email' => 'startup@company.test',
+        'tax' => 15,
+        'phone' => '555-0100',
+        'web' => 'https://startup.test',
+        'iban' => 'US00000001',
+        'swift' => 'SWIFT01',
+        'business_id' => 'B001',
+        'tax_id' => 'T001',
+        'vat' => 'V001',
+    ]);
+
+    $response->assertRedirect();
+    expect(OwnerCompany::count())->toBe(1);
+    $company = OwnerCompany::first();
+    expect($company->name)->toBe('Initial Company')
+        ->and($company->city)->toBe('Startup City')
+        ->and($company->tax)->toBe(1500);
+});
+
 it('updates owner company details', function () {
     $this->actingAs($this->admin);
 
@@ -152,4 +191,28 @@ it('returns dropdown values endpoint data', function () {
 
     $response = $this->getJson('/dropdown/values?currencies=true&countries=true');
     $response->assertOk();
+});
+
+it('navigates seamlessly between settings options', function () {
+    $this->actingAs($this->admin);
+
+    // 1. Visit company
+    $resCompany = $this->get('/settings/company');
+    $resCompany->assertOk();
+
+    // 2. Navigate from company to roles
+    $resRoles = $this->get('/settings/roles');
+    $resRoles->assertOk();
+
+    // 3. Navigate from roles to labels
+    $resLabels = $this->get('/settings/labels');
+    $resLabels->assertOk();
+
+    // 4. Navigate from labels to task priorities
+    $resPriorities = $this->get('/settings/task-priorities');
+    $resPriorities->assertOk();
+
+    // 5. Navigate back to company
+    $resBack = $this->get('/settings/company');
+    $resBack->assertOk();
 });

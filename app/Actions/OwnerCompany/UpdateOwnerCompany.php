@@ -20,6 +20,10 @@ class UpdateOwnerCompany
 
         $data['tax'] = intval($data['tax']) * 100;
 
-        return $ownerCompany->update($data);
+        if ($ownerCompany) {
+            return $ownerCompany->update($data);
+        }
+
+        return (bool) OwnerCompany::create($data);
     }
 }

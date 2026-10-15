@@ -12,6 +12,10 @@ class CurrencySeeder extends Seeder
      */
     public function run(): void
     {
+        if (DB::table('currencies')->count() > 0) {
+            return;
+        }
+
         DB::table('currencies')->insert([
             ['code' => 'AFN', 'name' => 'Afghani', 'symbol' => '؋', 'decimals' => 2],
             ['code' => 'ALL', 'name' => 'Lek', 'symbol' => 'Lek', 'decimals' => 2],
@@ -56,6 +60,7 @@ class CurrencySeeder extends Seeder
             ['code' => 'HUF', 'name' => 'Forint', 'symbol' => 'Ft', 'decimals' => 2],
             ['code' => 'IDR', 'name' => 'Rupiah', 'symbol' => 'Rp', 'decimals' => 2],
             ['code' => 'ILS', 'name' => 'New Israeli Sheqel', 'symbol' => '₪', 'decimals' => 2],
+            ['code' => 'INR', 'name' => 'Indian Rupee', 'symbol' => '₹', 'decimals' => 2],
             ['code' => 'IRR', 'name' => 'Iranian Rial', 'symbol' => '﷼', 'decimals' => 2],
             ['code' => 'ISK', 'name' => 'Iceland Krona', 'symbol' => 'kr', 'decimals' => 0],
             ['code' => 'JMD', 'name' => 'Jamaican Dollar', 'symbol' => 'J$', 'decimals' => 2],
